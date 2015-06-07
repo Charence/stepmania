@@ -78,9 +78,6 @@
 #include <windows.h>
 #endif
 
-// -- added
-#include "../bsn_client.hpp"
-
 void ShutdownGame();
 bool HandleGlobalInputs( const InputEventPlus &input );
 void HandleInputEvents(float fDeltaTime);
@@ -1210,23 +1207,8 @@ int sm_main(int argc, char* argv[])
 	if( GetCommandlineArgument("netip") )
 		NSMAN->DisplayStartupStatus();	// If we're using networking show what happened
 
-	// -- added
-
-	char config_filename[] = "sensor_config.txt";
-	bsn_init(config_filename);	// file name of sensor configuration parameters
-	bsn_set_center1();
-
 	// Run the main loop.
 	GameLoop::RunGameLoop();
-
-	// -- added
-	bsn_halt();
-
-	/*
-	where to put these function calls??
-	bsn_set_center1();
-	bsn_state1();	// probably at 
-	*/
 
 	PREFSMAN->SavePrefsToDisk();
 
@@ -1508,17 +1490,6 @@ bool HandleGlobalInputs( const InputEventPlus &input )
 	return false;
 }
 
-void addKeyboardInputToInputEvent(vector<InputEvent>* ieArray, DeviceButton key){
-	InputEvent ie;
-	RageTimer rtm;
-	rtm = RageTimer();
-	//ie.di = DeviceInput(DEVICE_KEYBOARD, key, 1.0f);
-	ie.di = DeviceInput(DEVICE_KEYBOARD, key, 1.0f, rtm);
-	ie.type = IET_FIRST_PRESS;
-	ie.m_ButtonState.push_back(ie.di);
-	ieArray->push_back(ie);
-}
-
 void HandleInputEvents(float fDeltaTime)
 {
 	INPUTFILTER->Update( fDeltaTime );
@@ -1538,66 +1509,12 @@ void HandleInputEvents(float fDeltaTime)
 	if( !HOOKS->AppHasFocus() )
 		return;
 
-	///*
-	// -- added
-	// detect control state from EAR sensor data
-	float state[3];
-	bsn_state1(&state[0], &state[1], &state[2]);
-	//printf("%.4f  %.4f  %.4f\n", state[0], state[1], state[2]);
-
-	int EAR_state = classify_EAR_state(state[0], state[1], state[2]);
-	switch (EAR_state){
-		case EAR_LEFT:
-			printf("EAR_LEFT\n");
-			addKeyboardInputToInputEvent(&ieArray, KEY_LEFT);
-			break;
-		case EAR_RIGHT:
-			printf("EAR_RIGHT\n");
-			addKeyboardInputToInputEvent(&ieArray, KEY_RIGHT);
-			break;
-		case EAR_UP:
-			printf("EAR_UP\n");
-			addKeyboardInputToInputEvent(&ieArray, KEY_UP);
-			break;
-		case EAR_DOWN:
-			printf("EAR_DOWN\n");
-			addKeyboardInputToInputEvent(&ieArray, KEY_DOWN);
-			break;
-	}
-	//*/
-
 	for( unsigned i=0; i<ieArray.size(); i++ )
 	{
 		InputEventPlus input;
 		input.DeviceI = ieArray[i].di;
 		input.type = ieArray[i].type;
 		swap( input.InputList, ieArray[i].m_ButtonState );
-
-		//if (input.DeviceI.device == DEVICE_KEYBOARD)
-			//printf("DeviceI, .device, .button:   %d   %d   %d\n", input.DeviceI, input.DeviceI.device, input.DeviceI.button);
-
-		// -- added
-		// swap control: KEYBOARD > MOUSE
-		/*
-		if (input.DeviceI.device == DEVICE_KEYBOARD) {
-			printf("device = DEVICE_KEYBOARD %d\n", input.DeviceI.device);
-		}
-		else if (input.DeviceI.device == DEVICE_MOUSE) {
-			printf("device = DEVICE_MOUSE %d\n", input.DeviceI.device);
-			if (input.DeviceI.button == MOUSE_LEFT) {
-				printf("button = MOUSE_LEFT %d\n", input.DeviceI.button);
-				// if mouse left button is clicked, change it to keyboard with key down pressed
-				input.DeviceI.device = DEVICE_KEYBOARD;
-				input.DeviceI.button = KEY_UP;
-			}
-			else if(input.DeviceI.button == MOUSE_RIGHT){
-				printf("button = MOUSE_RIGHT %d\n", input.DeviceI.button);
-
-				input.DeviceI.device = DEVICE_KEYBOARD;
-				input.DeviceI.button = KEY_DOWN;
-			}
-		}
-		*/
 
 		// hack for testing (MultiPlayer) with only one joystick
 		/*

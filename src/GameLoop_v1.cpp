@@ -22,9 +22,6 @@
 #include "RageTimer.h"
 #include "RageInput.h"
 
-// -- added
-#include "../bsn_client.hpp"
-
 static RageTimer g_GameplayTimer;
 
 static Preference<bool> g_bNeverBoostAppPriority( "NeverBoostAppPriority", false );
